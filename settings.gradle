@@ -1,0 +1,31 @@
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'gradeflow-backend'
+
+include(
+        'shared-kernel',
+        'identity',
+        'assignments',
+        'submissions',
+        'sandbox-execution',
+        'ai-evaluation',
+        'grading',
+        'plagiarism',
+        'evaluation-orchestrator',
+        'app-api',
+        'app-worker'
+)

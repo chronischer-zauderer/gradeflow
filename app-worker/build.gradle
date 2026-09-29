@@ -1,0 +1,10 @@
+apply plugin: 'org.springframework.boot'
+
+description = 'RabbitMQ worker application for asynchronous evaluations.'
+
+dependencies {
+    implementation project(':evaluation-orchestrator')
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

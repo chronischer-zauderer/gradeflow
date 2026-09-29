@@ -1,0 +1,4 @@
+description = 'AI evaluation ports and implementations.'
+dependencies {
+    api project(':shared-kernel')
+}

@@ -1,0 +1,11 @@
+description = 'Asynchronous evaluation workflow.'
+dependencies {
+    api project(':shared-kernel')
+    api project(':identity')
+    api project(':assignments')
+    api project(':submissions')
+    api project(':sandbox-execution')
+    api project(':ai-evaluation')
+    api project(':grading')
+    api project(':plagiarism')
+}

@@ -1,0 +1,4 @@
+description = 'Authentication and authorization services.'
+dependencies {
+    api project(':shared-kernel')
+}

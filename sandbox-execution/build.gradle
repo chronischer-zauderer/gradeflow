@@ -1,0 +1,4 @@
+description = 'Sandbox execution adapters.'
+dependencies {
+    api project(':shared-kernel')
+}
