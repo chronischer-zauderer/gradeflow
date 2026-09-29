@@ -1,4 +1,8 @@
+ifeq ($(OS),Windows_NT)
+GRADLEW := .\gradlew.bat
+else
 GRADLEW := ./gradlew
+endif
 
 .PHONY: build clean test assemble api worker infra-up infra-down
 

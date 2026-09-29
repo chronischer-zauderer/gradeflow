@@ -10,11 +10,21 @@
 ### Para ejecutar estamos usando un Makefile
 ### Comandos disponibles:
 
-## Usar GIT BASH en windows para ejecutar
+### Usar GIT BASH en windows para ejecutar
+### O simplemente instalalo en powershell con el siguiente comando:
 
+```powershell
+choco install make -y
+```
+
+---
 ```bash
 
+ifeq ($(OS),Windows_NT)
+GRADLEW := .\gradlew.bat
+else
 GRADLEW := ./gradlew
+endif
 
 .PHONY: build clean test assemble api worker infra-up infra-down
 
