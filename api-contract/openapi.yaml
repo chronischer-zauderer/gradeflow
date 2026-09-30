@@ -24,12 +24,24 @@ paths:
   /api/v1/submissions/{id}:
     get:
       summary: Get submission status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Submission status
   /api/v1/submissions/{id}/report:
     get:
       summary: Get a graded report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Grading report

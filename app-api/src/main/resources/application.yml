@@ -1,6 +1,10 @@
 spring:
   application:
     name: app-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/autograder}
+    username: ${SPRING_DATASOURCE_USERNAME:autograder}
+    password: ${SPRING_DATASOURCE_PASSWORD:autograder}
   flyway:
     enabled: true
 
