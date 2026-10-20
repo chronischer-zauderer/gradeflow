@@ -5,8 +5,16 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/autograder}
     username: ${SPRING_DATASOURCE_USERNAME:autograder}
     password: ${SPRING_DATASOURCE_PASSWORD:autograder}
+  jpa:
+    hibernate:
+      ddl-auto: validate
   flyway:
     enabled: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:autograder}
+    password: ${RABBITMQ_PASSWORD:autograder}
 
 server:
   port: ${SERVER_PORT:8080}

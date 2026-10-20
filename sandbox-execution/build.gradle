@@ -1,4 +1,6 @@
 description = 'Sandbox execution adapters.'
 dependencies {
     api project(':shared-kernel')
+    implementation 'org.springframework.boot:spring-boot-starter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

@@ -1,49 +1,94 @@
 openapi: 3.0.3
 info:
-  title: Autograder API
+  title: GradeFlow API
   version: 0.1.0
+  description: Fase 1 — isolated compilation of student submissions.
 paths:
-  /api/v1/auth/login:
+  /api/v1/assignments/{assignmentId}/submissions:
     post:
-      summary: Authenticate a user
-      responses:
-        '200':
-          description: Access token
-  /api/v1/assignments/{id}/submissions:
-    post:
-      summary: Upload a submission
+      summary: Register a submission for an assignment
       parameters:
         - in: path
-          name: id
+          name: assignmentId
           required: true
           schema:
             type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionRequest'
       responses:
         '202':
-          description: Submission queued
-  /api/v1/submissions/{id}:
+          description: Submission accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAccepted'
+        '400':
+          description: Invalid submission (empty code, too large, unsupported language)
+        '404':
+          description: Assignment not found
+  /api/v1/submissions/{submissionId}:
     get:
-      summary: Get submission status
+      summary: Get submission status and compilation result
       parameters:
         - in: path
-          name: id
+          name: submissionId
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
-          description: Submission status
-  /api/v1/submissions/{id}/report:
-    get:
-      summary: Get a graded report
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Grading report
-        '409':
-          description: Submission is not graded
+          description: Current status (and result once processed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionView'
+        '404':
+          description: Submission not found
+components:
+  schemas:
+    SubmissionRequest:
+      type: object
+      required: [sourceCode]
+      properties:
+        sourceCode:
+          type: string
+          example: "print('Hola GradeFlow')"
+    SubmissionAccepted:
+      type: object
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: QUEUED
+    SubmissionView:
+      type: object
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, COMPILED, COMPILE_ERROR, FAILED]
+        result:
+          nullable: true
+          $ref: '#/components/schemas/CompilationResult'
+    CompilationResult:
+      type: object
+      properties:
+        exitCode:
+          type: integer
+        stdout:
+          type: string
+        stderr:
+          type: string
+        durationMilliseconds:
+          type: integer
+          format: int64

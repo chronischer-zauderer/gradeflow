@@ -8,4 +8,6 @@ dependencies {
     api project(':ai-evaluation')
     api project(':grading')
     api project(':plagiarism')
+    implementation 'org.springframework.boot:spring-boot-starter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

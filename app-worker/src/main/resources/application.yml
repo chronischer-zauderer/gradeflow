@@ -1,5 +1,22 @@
 spring:
   application:
     name: app-worker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/autograder}
+    username: ${SPRING_DATASOURCE_USERNAME:autograder}
+    password: ${SPRING_DATASOURCE_PASSWORD:autograder}
+  jpa:
+    hibernate:
+      ddl-auto: validate
   flyway:
     enabled: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:autograder}
+    password: ${RABBITMQ_PASSWORD:autograder}
+
+sandbox:
+  image: ${SANDBOX_IMAGE:gradeflow-python-sandbox}
+  timeout-seconds: ${SANDBOX_TIMEOUT_SECONDS:10}
+  max-output-bytes: ${SANDBOX_MAX_OUTPUT_BYTES:65536}
