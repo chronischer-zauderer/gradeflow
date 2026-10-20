@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,9 @@ public class DockerSandboxExecutor implements SandboxExecutor {
         try {
             workDir = Files.createTempDirectory("gradeflow-sbx-");
             Files.writeString(workDir.resolve("Main.py"), sourceCode, StandardCharsets.UTF_8);
+            // createTempDirectory is 0700 on Linux; the --user 10001 container must traverse/read it.
+            worldReadable(workDir);
+            worldReadable(workDir.resolve("Main.py"));
         } catch (IOException e) {
             throw new SandboxException("Could not prepare sandbox work dir", e);
         }
@@ -77,6 +81,14 @@ public class DockerSandboxExecutor implements SandboxExecutor {
                 throw new UncheckedIOException(e);
             }
         });
+    }
+
+    private void worldReadable(Path path) {
+        try {
+            Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr-xr-x"));
+        } catch (UnsupportedOperationException | IOException ignored) {
+            // non-POSIX FS (Windows): bind-mount permissions are not enforced there
+        }
     }
 
     private void stopContainer(String name) {
