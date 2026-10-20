@@ -20,7 +20,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class DockerSandboxExecutor implements SandboxExecutor {
 
-    private static final String CHECK = "import sys; compile(sys.stdin.buffer.read(), 'Main.py', 'exec')";
+    // Compile AND run the student code so its stdout/stderr (print, loops) is captured. A syntax
+    // error fails at compile; a runtime error fails at exec — both give a non-zero exit.
+    private static final String CHECK = "import sys; exec(compile(sys.stdin.buffer.read(), 'Main.py', 'exec'), {'__name__': '__main__'})";
 
     private final SandboxProperties props;
 

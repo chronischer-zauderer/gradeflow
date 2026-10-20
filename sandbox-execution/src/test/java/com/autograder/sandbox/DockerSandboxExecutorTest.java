@@ -29,6 +29,13 @@ class DockerSandboxExecutorTest {
     }
 
     @Test
+    void capturesStdoutFromPrintAndLoop() {
+        SandboxResult r = executor.compile("for i in range(3):\n    print('line', i)\n");
+        assertThat(r.compiled()).isTrue();
+        assertThat(r.stdout()).contains("line 0").contains("line 2");
+    }
+
+    @Test
     void invalidPythonFailsWithStderr() {
         SandboxResult r = executor.compile("def broken(:\n");
         assertThat(r.compiled()).isFalse();
