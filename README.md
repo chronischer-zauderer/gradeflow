@@ -1,23 +1,39 @@
 # GradeFlow Backend
 
-## Importante: Julio no quiere camellar
-## Ya estoy camellando
-## **Ahora si, continuemos** 👺👺👺
+GradeFlow es una plataforma multi-tenant de evaluación automática de código. Esta rama implementa la **Fase 2: identidad, cursos, matrículas y vinculación segura de entregas** sobre el núcleo asíncrono y sandbox de la Fase 1, conforme a la arquitectura SaaS objetivo descrita en la [Wiki de GitHub](https://github.com/chronischer-zauderer/gradeflow/wiki).
 
-## Este proyecto es un backend para la aplicación GradeFlow, que permite a los usuarios gestionar y organizar sus calificaciones de manera eficiente.
+El sistema autentica usuarios con JWT, aplica los roles `ADMIN`, `TEACHER` y `STUDENT`, permite crear cursos, matricular estudiantes mediante códigos de invitación, crear tareas y enviar código Python en JSON. Las entregas continúan procesándose de forma asíncrona mediante RabbitMQ y Docker.
 
---- 
-### Para ejecutar estamos usando un Makefile
-### Comandos disponibles:
+## Estado actual
 
-### Usar GIT BASH en windows para ejecutar
-### O simplemente instalalo en powershell con el siguiente comando:
+Implementado:
 
-```powershell
-choco install make -y
-```
+- Registro y login con BCrypt y JWT stateless.
+- Cursos, matrículas y tareas con aislamiento por usuario y curso.
+- API REST protegida para registrar y consultar entregas.
+- Vinculación de cada submission con su estudiante autenticado.
+- Persistencia en PostgreSQL mediante JPA y Flyway.
+- Procesamiento asíncrono con RabbitMQ y `app-worker`.
+- Ejecución de Python 3.12 en Docker sin red y con usuario no privilegiado.
+- Límites de tiempo, salida, memoria, swap, CPU, procesos y escritura del sandbox.
+- Pruebas unitarias, de integración con Testcontainers y del sandbox real cuando la imagen está disponible.
 
----
+Fuera del alcance actual:
+
+- Casos de prueba, calificación por rúbrica y reportes.
+- Evaluación mediante IA y detección de plagio.
+- Frontend, subida de archivos, almacenamiento externo y múltiples lenguajes.
+- Despliegue productivo y escalabilidad horizontal.
+
+## Requisitos
+
+- Java 21. El proyecto declara un Gradle Toolchain 21; configura `JAVA_HOME` a un JDK 21 si tu entorno tiene varias versiones.
+- Docker Engine o Docker Desktop con Docker Compose.
+- Git.
+- GNU Make es opcional; también se puede usar directamente `gradlew`.
+
+Verifica el entorno con:
+
 ```bash
 java -version
 docker version
@@ -137,11 +153,7 @@ La consola de RabbitMQ está disponible en `http://localhost:15672`.
 
 ## API activa
 
-La migración de Flyway crea una asignación demo Python con este identificador:
-
-```text
-11111111-1111-1111-1111-111111111111
-```
+La migración de Flyway conserva una asignación demo histórica con el identificador `11111111-1111-1111-1111-111111111111`. Esa asignación no pertenece a un curso y se mantiene solo para compatibilidad con datos de Fase 1; las submissions nuevas de estudiantes deben usar una tarea creada dentro de un curso.
 
 Registrar un profesor y guardar su token:
 
@@ -160,12 +172,23 @@ curl -X POST http://localhost:8080/api/v1/courses \
   -d '{"name":"Algorithms","description":"Core"}'
 ```
 
-El response contiene `id` e `inviteCode`. Un estudiante debe registrarse y usar `POST /api/v1/courses/join` con ese código antes de enviar una entrega.
+La respuesta contiene `id` e `inviteCode`. Un estudiante debe registrarse, usar `POST /api/v1/courses/join` con ese código y crear una tarea como profesor antes de enviar una entrega.
+
+Crear una tarea dentro del curso:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/courses/<courseId>/assignments \
+  -H "Authorization: Bearer $TEACHER_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Exercise 1","description":"Python exercise","language":"PYTHON"}'
+```
+
+El response contiene el `assignmentId` que debe utilizarse en el siguiente request.
 
 Registrar una entrega autenticada:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/assignments/11111111-1111-1111-1111-111111111111/submissions \
+curl -X POST http://localhost:8080/api/v1/assignments/<assignmentId>/submissions \
   -H "Authorization: Bearer $STUDENT_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"sourceCode":"print(\"Hola GradeFlow\")"}'
@@ -228,6 +251,8 @@ Las pruebas con Testcontainers requieren Docker. La prueba del sandbox real se o
 - [Decisiones arquitectónicas](docs/adr)
 - [Wiki de GitHub](https://github.com/chronischer-zauderer/gradeflow/wiki)
 - [Reporte de cambios Fase 1 y SPI](docs/REPORTE_CAMBIOS_FASE1_SPI.md)
+- [Reporte de cambios Fase 2](docs/REPORTE_CAMBIOS_FASE2_IDENTITY_COURSES.md)
+- [Guía de pruebas dentro de Docker](docs/GUIA_EJECUCION_PRUEBAS_DOCKER.md)
 
 ## Licencia
 
