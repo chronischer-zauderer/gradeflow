@@ -4,6 +4,7 @@ import com.autograder.shared.Queues;
 import com.autograder.submissions.CompilationResult;
 import com.autograder.submissions.Submission;
 import com.autograder.submissions.SubmissionService;
+import com.autograder.shared.CurrentUserProvider;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
@@ -23,10 +24,13 @@ public class SubmissionController {
 
     private final SubmissionService submissions;
     private final RabbitTemplate rabbit;
+    private final CurrentUserProvider currentUser;
 
-    public SubmissionController(SubmissionService submissions, RabbitTemplate rabbit) {
+    public SubmissionController(SubmissionService submissions, RabbitTemplate rabbit,
+                                CurrentUserProvider currentUser) {
         this.submissions = submissions;
         this.rabbit = rabbit;
+        this.currentUser = currentUser;
     }
 
     public record SubmissionRequest(@NotBlank String sourceCode) {
@@ -44,7 +48,7 @@ public class SubmissionController {
     @PostMapping("/assignments/{assignmentId}/submissions")
     public ResponseEntity<SubmissionAccepted> register(@PathVariable UUID assignmentId,
                                                        @Valid @RequestBody SubmissionRequest request) {
-        Submission submission = submissions.register(assignmentId, request.sourceCode());
+        Submission submission = submissions.register(assignmentId, request.sourceCode(), currentUser.requireUser());
         rabbit.convertAndSend(Queues.SUBMISSIONS, submission.getId().toString());
         return ResponseEntity.accepted()
                 .body(new SubmissionAccepted(submission.getId(), submission.getStatus().name()));
@@ -52,7 +56,7 @@ public class SubmissionController {
 
     @GetMapping("/submissions/{submissionId}")
     public SubmissionView get(@PathVariable UUID submissionId) {
-        Submission submission = submissions.get(submissionId);
+        Submission submission = submissions.get(submissionId, currentUser.requireUser());
         CompilationResult result = submissions.resultOf(submissionId);
         ResultView view = result == null ? null
                 : new ResultView(result.getExitCode(), result.getStdout(), result.getStderr(),

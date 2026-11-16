@@ -19,6 +19,9 @@ public class Submission {
     @Column(name = "assignment_id", nullable = false)
     private UUID assignmentId;
 
+    @Column(name = "student_id")
+    private UUID studentId;
+
     @Column(name = "source_code", nullable = false, columnDefinition = "text")
     private String sourceCode;
 
@@ -36,8 +39,13 @@ public class Submission {
     }
 
     public Submission(UUID assignmentId, String sourceCode) {
+        this(assignmentId, null, sourceCode);
+    }
+
+    public Submission(UUID assignmentId, UUID studentId, String sourceCode) {
         this.id = UUID.randomUUID();
         this.assignmentId = assignmentId;
+        this.studentId = studentId;
         this.sourceCode = sourceCode;
         this.status = SubmissionStatus.QUEUED;
         this.createdAt = Instant.now();
@@ -55,6 +63,10 @@ public class Submission {
 
     public UUID getAssignmentId() {
         return assignmentId;
+    }
+
+    public UUID getStudentId() {
+        return studentId;
     }
 
     public String getSourceCode() {

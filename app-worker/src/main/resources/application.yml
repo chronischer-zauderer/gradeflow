@@ -20,3 +20,9 @@ sandbox:
   image: ${SANDBOX_IMAGE:gradeflow-python-sandbox}
   timeout-seconds: ${SANDBOX_TIMEOUT_SECONDS:10}
   max-output-bytes: ${SANDBOX_MAX_OUTPUT_BYTES:65536}
+  memory: ${SANDBOX_MEMORY:256m}
+  memory-swap: ${SANDBOX_MEMORY_SWAP:256m}
+  cpus: ${SANDBOX_CPUS:0.5}
+  pids-limit: ${SANDBOX_PIDS_LIMIT:64}
+  read-only: ${SANDBOX_READ_ONLY:true}
+  tmpfs: ${SANDBOX_TMPFS:/tmp:rw,noexec,nosuid,size=64m}

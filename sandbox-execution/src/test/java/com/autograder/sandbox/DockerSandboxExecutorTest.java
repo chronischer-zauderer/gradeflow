@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,24 @@ class DockerSandboxExecutorTest {
         props.setTimeoutSeconds(0); // forces the timeout branch deterministically
         assertThatThrownBy(() -> executor.compile("print('hi')"))
                 .isInstanceOf(SandboxException.class);
+    }
+
+    @Test
+    void commandContainsIsolationAndResourceLimits() {
+        SandboxProperties commandProps = new SandboxProperties();
+        DockerSandboxExecutor commandExecutor = new DockerSandboxExecutor(commandProps);
+
+        List<String> command = commandExecutor.buildCommand("gradeflow-test");
+
+        assertThat(command).containsSubsequence(
+                "--network", "none",
+                "--user", "10001",
+                "--memory", "256m",
+                "--memory-swap", "256m",
+                "--cpus", "0.5",
+                "--pids-limit", "64",
+                "--read-only",
+                "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m");
     }
 
     private static boolean imageAvailable() {

@@ -15,10 +15,19 @@ public class Assignment {
     private UUID id;
 
     @Column(nullable = false)
-    private String name;
+    private String title;
+
+    @Column(columnDefinition = "text")
+    private String description;
+
+    @Column(name = "course_id")
+    private UUID courseId;
 
     @Column(nullable = false)
     private String language;
+
+    @Column(name = "due_date")
+    private Instant dueDate;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -27,9 +36,17 @@ public class Assignment {
     }
 
     public Assignment(UUID id, String name, String language, Instant createdAt) {
+        this(id, null, name, "", language, null, createdAt);
+    }
+
+    public Assignment(UUID id, UUID courseId, String title, String description, String language,
+                      Instant dueDate, Instant createdAt) {
         this.id = id;
-        this.name = name;
+        this.courseId = courseId;
+        this.title = title;
+        this.description = description;
         this.language = language;
+        this.dueDate = dueDate;
         this.createdAt = createdAt;
     }
 
@@ -38,11 +55,27 @@ public class Assignment {
     }
 
     public String getName() {
-        return name;
+        return title;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
     }
 
     public String getLanguage() {
         return language;
+    }
+
+    public Instant getDueDate() {
+        return dueDate;
     }
 
     public Instant getCreatedAt() {

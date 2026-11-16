@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.autograder.assignments.Assignment;
 import com.autograder.assignments.AssignmentRepository;
+import com.autograder.assignments.CourseService;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,13 +23,14 @@ class SubmissionServiceTest {
     @Mock SubmissionRepository submissions;
     @Mock CompilationResultRepository results;
     @Mock AssignmentRepository assignments;
+    @Mock CourseService courses;
 
     SubmissionService service;
     final UUID assignmentId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        service = new SubmissionService(submissions, results, assignments);
+        service = new SubmissionService(submissions, results, assignments, courses);
     }
 
     private void assignmentExists(String language) {

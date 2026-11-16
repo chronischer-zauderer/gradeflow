@@ -33,10 +33,7 @@ public class DockerSandboxExecutor implements SandboxExecutor {
     @Override
     public SandboxResult compile(String sourceCode) {
         String container = "gradeflow-" + UUID.randomUUID();
-        List<String> cmd = List.of(
-                "docker", "run", "--rm", "-i", "--name", container,
-                "--network", "none", "--user", "10001",
-                props.getImage(), "-c", CHECK);
+        List<String> cmd = buildCommand(container);
 
         long start = System.nanoTime();
         try {
@@ -57,6 +54,21 @@ public class DockerSandboxExecutor implements SandboxExecutor {
             Thread.currentThread().interrupt();
             throw new SandboxException("Sandbox execution was interrupted", e);
         }
+    }
+
+    List<String> buildCommand(String container) {
+        List<String> command = new java.util.ArrayList<>(List.of(
+                "docker", "run", "--rm", "-i", "--name", container,
+                "--network", "none", "--user", "10001",
+                "--memory", props.getMemory(),
+                "--memory-swap", props.getMemorySwap(),
+                "--cpus", props.getCpus(),
+                "--pids-limit", String.valueOf(props.getPidsLimit())));
+        if (props.isReadOnly()) {
+            command.add("--read-only");
+        }
+        command.addAll(List.of("--tmpfs", props.getTmpfs(), props.getImage(), "-c", CHECK));
+        return List.copyOf(command);
     }
 
     private void writeStdin(Process p, String sourceCode) {
