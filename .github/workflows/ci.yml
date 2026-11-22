@@ -16,7 +16,7 @@ jobs:
       - name: Build sandbox image
         run: docker build -t gradeflow-python-sandbox infra/sandbox-image/python
       - name: Build and test
-        run: ./gradlew clean build
+        run: ./gradlew clean build -Dapi.version=1.44
       - name: Upload build artifacts
         if: always()
         uses: actions/upload-artifact@v4

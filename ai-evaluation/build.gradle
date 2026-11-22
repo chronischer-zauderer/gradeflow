@@ -1,4 +1,5 @@
 description = 'AI evaluation ports and implementations.'
 dependencies {
     api project(':shared-kernel')
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
 }

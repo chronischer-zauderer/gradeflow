@@ -3,6 +3,9 @@ package com.autograder.orchestrator;
 import com.autograder.sandbox.SandboxException;
 import com.autograder.sandbox.SandboxExecutor;
 import com.autograder.sandbox.SandboxResult;
+import com.autograder.shared.contracts.AiEvaluationPort;
+import com.autograder.shared.contracts.ExecutionArtifact;
+import com.autograder.shared.contracts.GradingPort;
 import com.autograder.submissions.CompilationResult;
 import com.autograder.submissions.CompilationResultRepository;
 import com.autograder.submissions.Submission;
@@ -23,12 +26,17 @@ public class EvaluationService {
     private final SubmissionRepository submissions;
     private final CompilationResultRepository results;
     private final SandboxExecutor sandbox;
+    private final GradingPort grading;
+    private final AiEvaluationPort aiEvaluation;
 
     public EvaluationService(SubmissionRepository submissions, CompilationResultRepository results,
-                             SandboxExecutor sandbox) {
+                             SandboxExecutor sandbox, GradingPort grading,
+                             AiEvaluationPort aiEvaluation) {
         this.submissions = submissions;
         this.results = results;
         this.sandbox = sandbox;
+        this.grading = grading;
+        this.aiEvaluation = aiEvaluation;
     }
 
     @Transactional
@@ -43,6 +51,18 @@ public class EvaluationService {
 
         try {
             SandboxResult r = sandbox.compile(submission.getSourceCode());
+            ExecutionArtifact artifact = new ExecutionArtifact(
+                    submission.getId(), submission.getAssignmentId(), submission.getSourceCode(),
+                    r.stdout(), r.stderr(), r.exitCode(), r.durationMilliseconds(), false,
+                    r.compiled());
+            try {
+                var gradingResult = grading.evaluate(artifact);
+                aiEvaluation.generateFeedback(artifact, gradingResult);
+            } catch (RuntimeException e) {
+                // Optional evaluators must not turn a completed sandbox execution into FAILED.
+                log.warn("Optional evaluation unavailable for submission {}: {}", submissionId,
+                        e.getMessage());
+            }
             SubmissionStatus status = r.compiled() ? SubmissionStatus.COMPILED : SubmissionStatus.COMPILE_ERROR;
             persist(submission, status, r.exitCode(), r.stdout(), r.stderr(), r.durationMilliseconds());
         } catch (SandboxException e) {

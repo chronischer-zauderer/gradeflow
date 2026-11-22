@@ -1,94 +1,329 @@
 openapi: 3.0.3
 info:
   title: GradeFlow API
-  version: 0.1.0
-  description: Fase 1 — isolated compilation of student submissions.
+  version: 0.2.0
+  description: Fase 2 - identidad, cursos, matrículas y submissions protegidas.
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo local
+security:
+  - bearerAuth: []
 paths:
-  /api/v1/assignments/{assignmentId}/submissions:
+  /api/v1/auth/register:
     post:
-      summary: Register a submission for an assignment
-      parameters:
-        - in: path
-          name: assignmentId
-          required: true
-          schema:
-            type: string
-            format: uuid
+      security: []
+      tags: [Auth]
+      summary: Registra un estudiante o profesor
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
       responses:
-        '202':
-          description: Submission accepted and queued
+        '201':
+          description: Usuario creado con token JWT.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionAccepted'
-        '400':
-          description: Invalid submission (empty code, too large, unsupported language)
-        '404':
-          description: Assignment not found
-  /api/v1/submissions/{submissionId}:
-    get:
-      summary: Get submission status and compilation result
-      parameters:
-        - in: path
-          name: submissionId
-          required: true
-          schema:
-            type: string
-            format: uuid
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/auth/login:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Autentica un usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
       responses:
         '200':
-          description: Current status (and result once processed)
+          description: Token JWT emitido.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/courses:
+    post:
+      tags: [Courses]
+      summary: Crea un curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CourseRequest' }
+      responses:
+        '200':
+          description: Curso creado con inviteCode.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Course' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    get:
+      tags: [Courses]
+      summary: Lista cursos visibles para el usuario autenticado
+      responses:
+        '200':
+          description: Cursos del profesor, matrículas del estudiante o todos para admin.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubmissionView'
-        '404':
-          description: Submission not found
+                type: array
+                items: { $ref: '#/components/schemas/Course' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/courses/join:
+    post:
+      tags: [Courses]
+      summary: Matricula al estudiante mediante inviteCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JoinRequest' }
+      responses:
+        '200':
+          description: Matrícula creada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Enrollment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/courses/{courseId}/assignments:
+    parameters:
+      - $ref: '#/components/parameters/CourseId'
+    post:
+      tags: [Assignments]
+      summary: Crea una tarea dentro de un curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssignmentRequest' }
+      responses:
+        '200':
+          description: Tarea creada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Assignment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    get:
+      tags: [Assignments]
+      summary: Lista tareas accesibles del curso
+      responses:
+        '200':
+          description: Tareas del curso.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Assignment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/assignments/{assignmentId}/submissions:
+    post:
+      tags: [Submissions]
+      summary: Registra y encola una entrega Python del estudiante autenticado
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmissionRequest' }
+      responses:
+        '202':
+          description: Entrega aceptada y encolada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubmissionAccepted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: Entrega fuera de plazo.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/v1/submissions/{submissionId}:
+    get:
+      tags: [Submissions]
+      summary: Consulta una entrega si el usuario tiene permiso
+      parameters:
+        - $ref: '#/components/parameters/SubmissionId'
+      responses:
+        '200':
+          description: Estado y resultado de la entrega.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubmissionView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CourseId:
+      in: path
+      name: courseId
+      required: true
+      schema: { type: string, format: uuid }
+    AssignmentId:
+      in: path
+      name: assignmentId
+      required: true
+      schema: { type: string, format: uuid }
+    SubmissionId:
+      in: path
+      name: submissionId
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: Solicitud inválida.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Falta un JWT válido.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: Authentication required }
+    Forbidden:
+      description: El rol o la pertenencia al recurso no permite la operación.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: Access denied }
+    NotFound:
+      description: Recurso inexistente.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Recurso duplicado o matrícula existente.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
   schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName, role]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, format: password }
+        fullName: { type: string, minLength: 1 }
+        role: { type: string, enum: [STUDENT, TEACHER] }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    AuthResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn, user]
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn: { type: integer, format: int64 }
+        user: { $ref: '#/components/schemas/User' }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        role: { type: string, enum: [ADMIN, TEACHER, STUDENT] }
+    CourseRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+    Course:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        inviteCode: { type: string, minLength: 6, maxLength: 8 }
+        teacherId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+    JoinRequest:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode: { type: string, minLength: 6, maxLength: 8 }
+    Enrollment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid }
+        studentId: { type: string, format: uuid }
+        enrolledAt: { type: string, format: date-time }
+    AssignmentRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        language: { type: string, default: PYTHON, enum: [PYTHON] }
+        dueDate: { type: string, format: date-time, nullable: true }
+    Assignment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        courseId: { type: string, format: uuid, nullable: true }
+        title: { type: string }
+        description: { type: string }
+        language: { type: string, example: PYTHON }
+        dueDate: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
     SubmissionRequest:
       type: object
       required: [sourceCode]
       properties:
         sourceCode:
           type: string
-          example: "print('Hola GradeFlow')"
+          minLength: 1
+          maxLength: 1000000
+          description: Código Python UTF-8, máximo efectivo de 1 MB por bytes.
     SubmissionAccepted:
       type: object
       properties:
-        submissionId:
-          type: string
-          format: uuid
-        status:
-          type: string
-          example: QUEUED
+        submissionId: { type: string, format: uuid }
+        status: { type: string, enum: [QUEUED] }
     SubmissionView:
       type: object
       properties:
-        submissionId:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [QUEUED, RUNNING, COMPILED, COMPILE_ERROR, FAILED]
+        submissionId: { type: string, format: uuid }
+        status: { type: string, enum: [QUEUED, RUNNING, COMPILED, COMPILE_ERROR, FAILED] }
         result:
           nullable: true
-          $ref: '#/components/schemas/CompilationResult'
+          allOf: [{ $ref: '#/components/schemas/CompilationResult' }]
     CompilationResult:
       type: object
       properties:
-        exitCode:
-          type: integer
-        stdout:
-          type: string
-        stderr:
-          type: string
-        durationMilliseconds:
-          type: integer
-          format: int64
+        exitCode: { type: integer }
+        stdout: { type: string }
+        stderr: { type: string }
+        durationMilliseconds: { type: integer, format: int64 }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }

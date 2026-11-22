@@ -30,5 +30,6 @@ subprojects {
 
     tasks.named('test') {
         useJUnitPlatform()
+        systemProperty 'api.version', System.getProperty('api.version', '1.44')
     }
 }
